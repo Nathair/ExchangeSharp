@@ -37,7 +37,7 @@ namespace ExchangeSharp
 		/// </summary>
 		private string cursorBefore;
 
-		private ExchangeCoinbaseAPI()
+		public ExchangeCoinbaseAPI()
 		{
 			RequestContentType = "application/json";
 			NonceStyle = NonceStyle.UnixSeconds;
@@ -534,7 +534,7 @@ namespace ExchangeSharp
 					key = PublicApiKey.ToUnsecureString(),
 					passphrase = CryptoUtility.ToUnsecureString(Passphrase),
 					timestamp = timestamp
-			};
+				};
 				await _socket.SendMessageAsync(subscribeRequest);
 			});
 		}

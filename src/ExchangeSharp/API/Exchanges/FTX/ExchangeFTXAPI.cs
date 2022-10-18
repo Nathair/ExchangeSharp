@@ -8,6 +8,11 @@ namespace ExchangeSharp
 	{
 		public override string BaseUrl { get; set; } = "https://ftx.com/api";
 		public override string BaseUrlWebSocket { get; set; } = "wss://ftx.com/ws/";
+
+		public ExchangeFTXAPI()
+		{
+
+		}
 	}
 
 	public partial class ExchangeName { public const string FTX = "FTX"; }
