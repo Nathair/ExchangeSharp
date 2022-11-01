@@ -12,6 +12,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 namespace ExchangeSharp
 {
+	using ExchangeSharp.BinanceGroup;
 	using ExchangeSharp.Coinbase;
 	using Newtonsoft.Json;
 	using Newtonsoft.Json.Linq;
@@ -267,6 +268,30 @@ namespace ExchangeSharp
 
 			}
 			throw new APIException($"Address not found for {symbol}");
+		}
+
+		protected override async Task<IEnumerable<ExchangeTransaction>> OnGetDepositHistoryAsync(string currency)
+		{
+			//object nonce = await GenerateNonceAsync();
+			//Dictionary<string, object> payload = new Dictionary<string, object>
+			//{
+			//	{ "nonce", nonce },
+			//	{ "type", order.OrderType.ToStringLowerInvariant() },
+			//	{ "side", (order.IsBuy ? "buy" : "sell") },
+			//	{ "product_id", order.MarketSymbol },
+			//	{ "size", order.RoundAmount().ToStringInvariant() }
+			//};
+			//payload["time_in_force"] = "GTC"; // good til cancel
+			var res = new List<ExchangeTransaction>();
+			JArray transactions = await this.MakeJsonRequestAsync<JArray>("/transfers", null, await GetNoncePayloadAsync(), "GET");
+
+			foreach (JToken token in transactions)
+			{
+				res.Add(JsonConvert.DeserializeObject<BalanceTransaction>(token.ToString()));
+			}
+			//}
+			return currency == null ? res : res.Where(x => x.Currency == currency);
+			throw new APIException($"GetDepositHistory not found for {currency}");
 		}
 
 		protected override async Task<IEnumerable<KeyValuePair<string, ExchangeTicker>>> OnGetTickersAsync()
