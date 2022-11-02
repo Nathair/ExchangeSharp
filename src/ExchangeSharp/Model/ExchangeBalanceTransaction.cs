@@ -19,9 +19,9 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace ExchangeSharp.Coinbase
+namespace ExchangeSharp
 {
-	public class BalanceTransaction : ExchangeTransaction
+	public class ExchangeBalanceTransaction : ExchangeTransaction
 	{
 		public string Id { get; set; }
 		public BalanceType Type { get; set; }

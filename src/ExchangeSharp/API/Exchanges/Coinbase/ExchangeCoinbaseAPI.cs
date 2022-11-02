@@ -287,7 +287,7 @@ namespace ExchangeSharp
 
 			foreach (JToken token in transactions)
 			{
-				res.Add(JsonConvert.DeserializeObject<BalanceTransaction>(token.ToString()));
+				res.Add(JsonConvert.DeserializeObject<ExchangeBalanceTransaction>(token.ToString()));
 			}
 			//}
 			return currency == null ? res : res.Where(x => x.Currency == currency);
