@@ -1,9 +1,11 @@
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace ExchangeSharp
 {
@@ -21,6 +23,73 @@ namespace ExchangeSharp
 		#endregion
 
 		#region [ Implementation ]
+
+		protected override async Task<IEnumerable<ExchangeTransaction>> OnGetDepositHistoryAsync(string currency)
+		{
+			//object nonce = await GenerateNonceAsync();
+			//Dictionary<string, object> payload = new Dictionary<string, object>
+			//{
+			//	{ "nonce", nonce },
+			//	{ "type", order.OrderType.ToStringLowerInvariant() },
+			//	{ "side", (order.IsBuy ? "buy" : "sell") },
+			//	{ "product_id", order.MarketSymbol },
+			//	{ "size", order.RoundAmount().ToStringInvariant() }
+			//};
+			//payload["time_in_force"] = "GTC"; // good til cancel
+			var res = new List<ExchangeTransaction>();
+			JToken transactionsDeposit = await this.MakeJsonRequestAsync<JToken>("/wallet/deposits", null, await GetNoncePayloadAsync(), "GET");
+			JToken transactionsWithdrawal = await this.MakeJsonRequestAsync<JToken>("/wallet/withdrawals", null, await GetNoncePayloadAsync(), "GET");
+
+			foreach (JToken token in transactionsDeposit)
+			{
+				var a = JsonConvert.DeserializeObject<ExchangeBalanceTransactionByFtx>(token.ToString());
+				var s = new ExchangeBalanceTransaction()
+				{
+					Id = a.Id.ToString(),
+					Type = BalanceType.Deposit,
+					CreatedAt = a.SentTime,
+					CompletedAt = a.ConfirmedTime,
+					//AccountId = a.,
+					//UserId = a.,
+					Amount = (decimal)a.Size,
+					//Details = a.,
+					//CanceledAt = a.,
+					ProcessedAt = a.ConfirmedTime,
+					//UserNonce = a.,
+					//Idem = a.,
+					//ProfileId = a.,
+					Address = a.Address,
+					Currency = a.Coin
+				};
+				res.Add(s);
+			}
+			foreach (JToken token in transactionsWithdrawal)
+			{
+				var a = JsonConvert.DeserializeObject<ExchangeBalanceTransactionByFtx>(token.ToString());
+				var s = new ExchangeBalanceTransaction()
+				{
+					Id = a.Id.ToString(),
+					Type = BalanceType.Withdraw,
+					CreatedAt = a.SentTime,
+					CompletedAt = a.ConfirmedTime,
+					//AccountId = a.,
+					//UserId = a.,
+					Amount = (decimal)a.Size,
+					//Details = a.,
+					//CanceledAt = a.,
+					ProcessedAt = a.ConfirmedTime,
+					//UserNonce = a.,
+					//Idem = a.,
+					//ProfileId = a.,
+					Address = a.Address,
+					Currency = a.Coin
+				};
+				res.Add(s);
+			}
+			//}
+			return currency == null ? res : res.Where(x => x.Currency == currency);
+			throw new APIException($"GetDepositHistory not found for {currency}");
+		}
 
 		/// <inheritdoc />
 		protected async override Task OnCancelOrderAsync(string orderId, string marketSymbol = null, bool isClientOrderId = false)
@@ -499,7 +568,7 @@ namespace ExchangeSharp
 				Price = CryptoUtility.ConvertInvariant<decimal>(response["price"]),
 				AmountFilled = CryptoUtility.ConvertInvariant<decimal>(response["filledSize"]),
 				AveragePrice = CryptoUtility.ConvertInvariant<decimal>(response["avgFillPrice"]),
-				Amount  = CryptoUtility.ConvertInvariant<decimal>(response["size"]),
+				Amount = CryptoUtility.ConvertInvariant<decimal>(response["size"]),
 				MarketSymbol = response["market"].ToStringInvariant(),
 				IsBuy = response["side"].ToStringInvariant() == "buy"
 			};

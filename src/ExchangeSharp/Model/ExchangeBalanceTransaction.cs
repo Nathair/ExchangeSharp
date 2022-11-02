@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace ExchangeSharp
 {
-	public class ExchangeBalanceTransaction : ExchangeTransaction
+	public class ExchangeBalanceTransaction : ExchangeTransaction //by coinbase msg
 	{
 		public string Id { get; set; }
 		public BalanceType Type { get; set; }
@@ -52,6 +52,7 @@ namespace ExchangeSharp
 
 		[JsonProperty("profile_id")]
 		public string ProfileId { get; set; }
+		new public object Address { get; set; }
 		//public string Currency { get; set; }
 		override public string ToString() => $"{CompletedAt} {Currency}/{Type}:{Amount}";
 	}
@@ -75,4 +76,34 @@ namespace ExchangeSharp
 		Withdraw
 	}
 
+	public class ExchangeBalanceTransactionByFtx
+	{
+		public int Id { get; set; }
+		public string Coin { get; set; }
+		public string TxId { get; set; }
+		public AddressClass Address { get; set; }
+		public float Size { get; set; }
+		public float Fee { get; set; }
+		public BalanceTransactionStatus Status { get; set; }
+		public DateTime? Time { get; set; }
+		public DateTime? SentTime { get; set; }
+		public DateTime? ConfirmedTime { get; set; }
+		public int Confirmations { get; set; }
+		public string Method { get; set; }
+		override public string ToString() => $"{ConfirmedTime} {Coin}/{Method}:{Size}";
+	}
+
+	public class AddressClass
+	{
+		public string Address { get; set; }
+		public object Tag { get; set; }
+		public string Method { get; set; }
+		public object Coin { get; set; }
+	}
+
+	public enum BalanceTransactionStatus
+	{
+		Unknown,
+		Confirmed
+	}
 }
