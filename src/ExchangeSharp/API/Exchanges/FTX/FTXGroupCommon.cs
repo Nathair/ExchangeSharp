@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -24,6 +25,7 @@ namespace ExchangeSharp
 
 		#region [ Implementation ]
 
+		ConcurrentDictionary<string, List<ExchangeTransaction>> deposits = null;// new System.Collections.Concurrent.ConcurrentDictionary<string, List<ExchangeBalanceTransactionByFtx>>();
 		protected override async Task<IEnumerable<ExchangeTransaction>> OnGetDepositHistoryAsync(string currency)
 		{
 			//object nonce = await GenerateNonceAsync();
@@ -36,58 +38,78 @@ namespace ExchangeSharp
 			//	{ "size", order.RoundAmount().ToStringInvariant() }
 			//};
 			//payload["time_in_force"] = "GTC"; // good til cancel
-			var res = new List<ExchangeTransaction>();
-			JToken transactionsDeposit = await this.MakeJsonRequestAsync<JToken>("/wallet/deposits", null, await GetNoncePayloadAsync(), "GET");
-			JToken transactionsWithdrawal = await this.MakeJsonRequestAsync<JToken>("/wallet/withdrawals", null, await GetNoncePayloadAsync(), "GET");
+			if (deposits == null)
+			{
+				var res = new List<ExchangeTransaction>();
+				JToken transactionsDeposit = await this.MakeJsonRequestAsync<JToken>("/wallet/deposits", null, await GetNoncePayloadAsync(), "GET");
+				JToken transactionsWithdrawal = await this.MakeJsonRequestAsync<JToken>("/wallet/withdrawals", null, await GetNoncePayloadAsync(), "GET");
 
-			foreach (JToken token in transactionsDeposit)
-			{
-				var a = JsonConvert.DeserializeObject<ExchangeBalanceTransactionByFtx>(token.ToString());
-				var s = new ExchangeBalanceTransaction()
+				foreach (JToken token in transactionsDeposit)
 				{
-					Id = a.Id.ToString(),
-					Type = BalanceType.Deposit,
-					CreatedAt = a.SentTime,
-					CompletedAt = a.ConfirmedTime,
-					//AccountId = a.,
-					//UserId = a.,
-					Amount = (decimal)a.Size,
-					//Details = a.,
-					//CanceledAt = a.,
-					ProcessedAt = a.ConfirmedTime,
-					//UserNonce = a.,
-					//Idem = a.,
-					//ProfileId = a.,
-					Address = a.Address,
-					Currency = a.Coin
-				};
-				res.Add(s);
+					var a = JsonConvert.DeserializeObject<ExchangeBalanceTransactionByFtx>(token.ToString());
+					var s = new ExchangeBalanceTransaction()
+					{
+						Id = a.Id.ToString(),
+						Type = BalanceType.Deposit,
+						CreatedAt = a.SentTime,
+						CompletedAt = a.ConfirmedTime,
+						//AccountId = a.,
+						//UserId = a.,
+						Amount = (decimal)a.Size,
+						//Details = a.,
+						//CanceledAt = a.,
+						ProcessedAt = a.ConfirmedTime,
+						//UserNonce = a.,
+						//Idem = a.,
+						//ProfileId = a.,
+						Address = a.Address,
+						Currency = a.Coin
+					};
+					res.Add(s);
+				}
+				foreach (JToken token in transactionsWithdrawal)
+				{
+					var a = JsonConvert.DeserializeObject<ExchangeBalanceTransactionByFtx>(token.ToString());
+					var s = new ExchangeBalanceTransaction()
+					{
+						Id = a.Id.ToString(),
+						Type = BalanceType.Withdraw,
+						CreatedAt = a.SentTime,
+						CompletedAt = a.ConfirmedTime,
+						//AccountId = a.,
+						//UserId = a.,
+						Amount = (decimal)a.Size,
+						//Details = a.,
+						//CanceledAt = a.,
+						ProcessedAt = a.ConfirmedTime,
+						//UserNonce = a.,
+						//Idem = a.,
+						//ProfileId = a.,
+						Address = a.Address,
+						Currency = a.Coin
+					};
+					res.Add(s);
+				}
+				var g = res.GroupBy(x => x.Currency).ToList();
+				deposits = new ConcurrentDictionary<string, List<ExchangeTransaction>>();
+				g.ForEach(x =>
+				{
+					deposits[x.Key] = x.ToList();
+				});
+
+				Task.Run(() =>
+				{
+					Task.Delay(5 * 60 * 1000).Wait();
+					deposits = null;
+				});
+
+				return currency == null ? res : deposits.ContainsKey(currency) ? deposits[currency] : new List<ExchangeTransaction>();
 			}
-			foreach (JToken token in transactionsWithdrawal)
+			else
 			{
-				var a = JsonConvert.DeserializeObject<ExchangeBalanceTransactionByFtx>(token.ToString());
-				var s = new ExchangeBalanceTransaction()
-				{
-					Id = a.Id.ToString(),
-					Type = BalanceType.Withdraw,
-					CreatedAt = a.SentTime,
-					CompletedAt = a.ConfirmedTime,
-					//AccountId = a.,
-					//UserId = a.,
-					Amount = (decimal)a.Size,
-					//Details = a.,
-					//CanceledAt = a.,
-					ProcessedAt = a.ConfirmedTime,
-					//UserNonce = a.,
-					//Idem = a.,
-					//ProfileId = a.,
-					Address = a.Address,
-					Currency = a.Coin
-				};
-				res.Add(s);
+				return currency == null ? new List<ExchangeTransaction>() : deposits.ContainsKey(currency) ? deposits[currency] : new List<ExchangeTransaction>();
 			}
 			//}
-			return currency == null ? res : res.Where(x => x.Currency == currency);
 			throw new APIException($"GetDepositHistory not found for {currency}");
 		}
 

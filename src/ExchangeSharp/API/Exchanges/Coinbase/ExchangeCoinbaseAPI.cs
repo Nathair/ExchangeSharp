@@ -17,6 +17,7 @@ namespace ExchangeSharp
 	using Newtonsoft.Json;
 	using Newtonsoft.Json.Linq;
 	using System;
+	using System.Collections.Concurrent;
 	using System.Collections.Generic;
 	using System.Diagnostics;
 	using System.Linq;
@@ -270,6 +271,7 @@ namespace ExchangeSharp
 			throw new APIException($"Address not found for {symbol}");
 		}
 
+		ConcurrentDictionary<string, List<ExchangeTransaction>> deposits = null;// new System.Collections.Concurrent.ConcurrentDictionary<string, List<ExchangeBalanceTransactionByFtx>>();
 		protected override async Task<IEnumerable<ExchangeTransaction>> OnGetDepositHistoryAsync(string currency)
 		{
 			//object nonce = await GenerateNonceAsync();
@@ -282,15 +284,35 @@ namespace ExchangeSharp
 			//	{ "size", order.RoundAmount().ToStringInvariant() }
 			//};
 			//payload["time_in_force"] = "GTC"; // good til cancel
-			var res = new List<ExchangeTransaction>();
-			JArray transactions = await this.MakeJsonRequestAsync<JArray>("/transfers", null, await GetNoncePayloadAsync(), "GET");
-
-			foreach (JToken token in transactions)
+			if (deposits == null)
 			{
-				res.Add(JsonConvert.DeserializeObject<ExchangeBalanceTransaction>(token.ToString()));
+				var res = new List<ExchangeTransaction>();
+				JArray transactions = await this.MakeJsonRequestAsync<JArray>("/transfers", null, await GetNoncePayloadAsync(), "GET");
+
+				foreach (JToken token in transactions)
+				{
+					res.Add(JsonConvert.DeserializeObject<ExchangeBalanceTransaction>(token.ToString()));
+				}
+				//}
+				var g = res.GroupBy(x => x.Currency).ToList();
+				deposits = new ConcurrentDictionary<string, List<ExchangeTransaction>>();
+				g.ForEach(x =>
+				{
+					deposits[x.Key] = x.ToList();
+				});
+
+				Task.Run(() =>
+				{
+					Task.Delay(5 * 60 * 1000).Wait();
+					deposits = null;
+				});
+
+				return currency == null ? res : deposits.ContainsKey(currency) ? deposits[currency] : new List<ExchangeTransaction>();
 			}
-			//}
-			return currency == null ? res : res.Where(x => x.Currency == currency);
+			else
+			{
+				return currency == null ? new List<ExchangeTransaction>() : deposits.ContainsKey(currency) ? deposits[currency] : new List<ExchangeTransaction>();
+			}
 			throw new APIException($"GetDepositHistory not found for {currency}");
 		}
 
