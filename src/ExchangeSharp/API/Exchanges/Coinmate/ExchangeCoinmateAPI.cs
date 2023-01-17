@@ -61,7 +61,7 @@ namespace ExchangeSharp
 			var book = await MakeCoinmateRequest<CoinmateOrderBook>("/orderBook?&groupByPriceLimit=False&currencyPair=" + marketSymbol);
 			var result = new ExchangeOrderBook
 			{
-				MarketSymbol = marketSymbol,	
+				MarketSymbol = marketSymbol,
 			};
 
 			book.Asks

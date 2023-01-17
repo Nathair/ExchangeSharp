@@ -40,7 +40,7 @@ namespace ExchangeSharp
 		}
 
 		private void GetFastestUrl()
-		{ 
+		{
 			//var client = new HttpClient();
 			//foreach (var url in Urls)
 			//{

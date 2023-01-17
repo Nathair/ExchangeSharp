@@ -13,6 +13,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 // if you can't use ASP.NET signalr nuget package, comment this out
 #define HAS_SIGNALR
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,13 +22,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.WebSockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Security.Cryptography;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ExchangeSharp
 {

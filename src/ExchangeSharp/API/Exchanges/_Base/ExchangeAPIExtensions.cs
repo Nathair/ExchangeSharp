@@ -11,21 +11,21 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 #nullable enable
 
+using ExchangeSharp.API.Exchanges.FTX.Models;
+using ExchangeSharp.BinanceGroup;
+using ExchangeSharp.Bitflyer;
+using ExchangeSharp.Bitstamp;
+using ExchangeSharp.Bybit;
+using ExchangeSharp.Coinbase;
+using ExchangeSharp.Kraken;
+using ExchangeSharp.KuCoin;
+using ExchangeSharp.NDAX;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ExchangeSharp.Kraken;
-using ExchangeSharp.BinanceGroup;
-using ExchangeSharp.Bitstamp;
-using ExchangeSharp.Coinbase;
-using ExchangeSharp.KuCoin;
-using Newtonsoft.Json.Linq;
-using ExchangeSharp.NDAX;
-using ExchangeSharp.API.Exchanges.FTX.Models;
-using ExchangeSharp.Bybit;
-using ExchangeSharp.Bitflyer;
 
 namespace ExchangeSharp
 {
@@ -308,7 +308,7 @@ namespace ExchangeSharp
 			}
 			if (abortIfOrderBookTooSmall && counter < amount)
 			{
-				throw new APIException($"{(isBuy ? "Buy" : "Sell") } order for {marketSymbol} and amount {amount} cannot be fulfilled because the order book is too thin.");
+				throw new APIException($"{(isBuy ? "Buy" : "Sell")} order for {marketSymbol} and amount {amount} cannot be fulfilled because the order book is too thin.");
 			}
 			else if (lowPrice / highPrice < thresholdToAbort)
 			{
@@ -756,7 +756,7 @@ namespace ExchangeSharp
 			{
 				candle.WeightedAverage = token[weightedAverageKey].ConvertInvariant<decimal>();
 			}
-			if( countKey != null)
+			if (countKey != null)
 			{
 				candle.Count = token[countKey].ConvertInvariant<int>();
 			}

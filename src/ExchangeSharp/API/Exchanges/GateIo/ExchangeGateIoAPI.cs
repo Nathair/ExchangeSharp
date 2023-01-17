@@ -312,7 +312,7 @@ namespace ExchangeSharp
 
 				if (string.IsNullOrEmpty(order.ClientOrderId))
 				{
-					order.ClientOrderId = $"{CryptoUtility.UnixTimestampFromDateTimeMilliseconds(DateTime.Now)}-{i.ToStringInvariant()}" ;
+					order.ClientOrderId = $"{CryptoUtility.UnixTimestampFromDateTimeMilliseconds(DateTime.Now)}-{i.ToStringInvariant()}";
 				}
 				AddOrderToPayload(order, subPayload);
 				return subPayload;
@@ -490,7 +490,7 @@ namespace ExchangeSharp
 						// successfully subscribed to trade stream
 					}
 					else
-   					{
+					{
 						var exchangeTrade = parsedMsg["result"].ParseTrade("amount", "price", "side", "create_time_ms", TimestampType.UnixMillisecondsDouble, "id");
 
 						await callback(new KeyValuePair<string, ExchangeTrade>(parsedMsg["result"]["currency_pair"].ToStringInvariant(), exchangeTrade));

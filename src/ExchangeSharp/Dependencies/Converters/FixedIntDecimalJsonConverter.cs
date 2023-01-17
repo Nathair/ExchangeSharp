@@ -1,6 +1,6 @@
-using System;
 using ExchangeSharp.Utility;
 using Newtonsoft.Json;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace ExchangeSharp
@@ -21,7 +21,7 @@ namespace ExchangeSharp
 
 		public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
 		{
-			var valueLong = converter.FromDecimal((decimal) value);
+			var valueLong = converter.FromDecimal((decimal)value);
 			writer.WriteValue(valueLong);
 		}
 

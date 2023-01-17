@@ -10,13 +10,13 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 
 // different namespace for this since we don't want this to be easily accessible publically
 namespace ExchangeSharp.OKGroup
@@ -32,9 +32,9 @@ namespace ExchangeSharp.OKGroup
 		/// </summary>
 		public abstract string BaseUrlV3 { get; set; }
 
-        /// <summary>
-        /// Are futures and swap enabled?
-        /// </summary>
+		/// <summary>
+		/// Are futures and swap enabled?
+		/// </summary>
 		protected abstract bool IsFuturesAndSwapEnabled { get; }
 
 		/// <summary>
@@ -44,80 +44,80 @@ namespace ExchangeSharp.OKGroup
 
 		protected OKGroupCommon() : base()
 		{
-            RequestContentType = "application/x-www-form-urlencoded";
-            MarketSymbolSeparator = "-";
-            MarketSymbolIsUppercase = true;
-            WebSocketOrderBookType = WebSocketOrderBookType.FullBookFirstThenDeltas;
+			RequestContentType = "application/x-www-form-urlencoded";
+			MarketSymbolSeparator = "-";
+			MarketSymbolIsUppercase = true;
+			WebSocketOrderBookType = WebSocketOrderBookType.FullBookFirstThenDeltas;
 		}
 
 		public override string PeriodSecondsToString(int seconds)
-        {
-            return CryptoUtility.SecondsToPeriodStringLong(seconds);
-        }
+		{
+			return CryptoUtility.SecondsToPeriodStringLong(seconds);
+		}
 
-        private string GetPayloadForm(Dictionary<string, object> payload)
-        {
-            payload["api_key"] = PublicApiKey.ToUnsecureString();
-            string form = CryptoUtility.GetFormForPayload(payload, false);
-            string sign = form + "&secret_key=" + PrivateApiKey.ToUnsecureString();
-            sign = CryptoUtility.MD5Sign(sign);
-            return form + "&sign=" + sign;
-        }
+		private string GetPayloadForm(Dictionary<string, object> payload)
+		{
+			payload["api_key"] = PublicApiKey.ToUnsecureString();
+			string form = CryptoUtility.GetFormForPayload(payload, false);
+			string sign = form + "&secret_key=" + PrivateApiKey.ToUnsecureString();
+			sign = CryptoUtility.MD5Sign(sign);
+			return form + "&sign=" + sign;
+		}
 
-        private string GetAuthForWebSocket()
-        {
-            string apiKey = PublicApiKey.ToUnsecureString();
-            string param = "api_key=" + apiKey + "&secret_key=" + PrivateApiKey.ToUnsecureString();
-            string sign = CryptoUtility.MD5Sign(param);
-            return $"{{ \"event\": \"login\", \"parameters\": {{ \"api_key\": \"{apiKey}\", \"sign\": \"{sign}\" }} }}";
-        }
+		private string GetAuthForWebSocket()
+		{
+			string apiKey = PublicApiKey.ToUnsecureString();
+			string param = "api_key=" + apiKey + "&secret_key=" + PrivateApiKey.ToUnsecureString();
+			string sign = CryptoUtility.MD5Sign(param);
+			return $"{{ \"event\": \"login\", \"parameters\": {{ \"api_key\": \"{apiKey}\", \"sign\": \"{sign}\" }} }}";
+		}
 
-        #region ProcessRequest
+		#region ProcessRequest
 
-        protected override JToken CheckJsonResponse(JToken result)
-        {
-            if (result is JArray)
-            {
-                return result;
-            }
-            JToken innerResult = result["result"];
-            if (innerResult != null && !innerResult.ConvertInvariant<bool>())
-            {
-                throw new APIException("Result is false: " + result.ToString());
-            }
-            innerResult = result["code"];
-            if (innerResult != null && innerResult.ConvertInvariant<int>() != 0)
-            {
-                throw new APIException("Code is non-zero: " + result.ToString());
-            }
-            return result["data"] ?? result;
-        }
+		protected override JToken CheckJsonResponse(JToken result)
+		{
+			if (result is JArray)
+			{
+				return result;
+			}
+			JToken innerResult = result["result"];
+			if (innerResult != null && !innerResult.ConvertInvariant<bool>())
+			{
+				throw new APIException("Result is false: " + result.ToString());
+			}
+			innerResult = result["code"];
+			if (innerResult != null && innerResult.ConvertInvariant<int>() != 0)
+			{
+				throw new APIException("Code is non-zero: " + result.ToString());
+			}
+			return result["data"] ?? result;
+		}
 
-        protected override async Task ProcessRequestAsync(IHttpWebRequest request, Dictionary<string, object> payload)
-        {
-            if (CanMakeAuthenticatedRequest(payload))
-            {
-                string msg = GetPayloadForm(payload);
-                await CryptoUtility.WriteToRequestAsync(request, msg);
-            }
-        }
+		protected override async Task ProcessRequestAsync(IHttpWebRequest request, Dictionary<string, object> payload)
+		{
+			if (CanMakeAuthenticatedRequest(payload))
+			{
+				string msg = GetPayloadForm(payload);
+				await CryptoUtility.WriteToRequestAsync(request, msg);
+			}
+		}
 
-        private async Task<Tuple<JToken, string>> MakeRequestOkexAsync(string marketSymbol, string subUrl, string baseUrl = null)
-        {
-            marketSymbol = NormalizeMarketSymbol(marketSymbol);
-            JToken obj = await MakeJsonRequestAsync<JToken>(subUrl.Replace("$SYMBOL$", marketSymbol ?? string.Empty), baseUrl);
-            return new Tuple<JToken, string>(obj, marketSymbol);
-        }
-        #endregion
+		private async Task<Tuple<JToken, string>> MakeRequestOkexAsync(string marketSymbol, string subUrl, string baseUrl = null)
+		{
+			marketSymbol = NormalizeMarketSymbol(marketSymbol);
+			JToken obj = await MakeJsonRequestAsync<JToken>(subUrl.Replace("$SYMBOL$", marketSymbol ?? string.Empty), baseUrl);
+			return new Tuple<JToken, string>(obj, marketSymbol);
+		}
+		#endregion
 
-        #region Public APIs
-        protected override async Task<IEnumerable<string>> OnGetMarketSymbolsAsync()
-        {
-            var m = await GetMarketSymbolsMetadataAsync();
-            return m.Select(x => x.MarketSymbol);
-        }
-        protected internal override async Task<IEnumerable<ExchangeMarket>> OnGetMarketSymbolsMetadataAsync()
-        {
+		#region Public APIs
+		protected override async Task<IEnumerable<string>> OnGetMarketSymbolsAsync()
+		{
+			var m = await GetMarketSymbolsMetadataAsync();
+			return m.Select(x => x.MarketSymbol);
+		}
+		protected internal override async Task<IEnumerable<ExchangeMarket>> OnGetMarketSymbolsMetadataAsync()
+		{
 			/* V3 spot sample
 			[
 				{
@@ -167,19 +167,19 @@ namespace ExchangeSharp.OKGroup
 					markets.Add(market);
 				}
 			}
-            return markets;
-        }
+			return markets;
+		}
 
-        protected override async Task<ExchangeTicker> OnGetTickerAsync(string marketSymbol)
+		protected override async Task<ExchangeTicker> OnGetTickerAsync(string marketSymbol)
 		{ // V3: /api/swap/v3/instruments/BTC-USD-SWAP/ticker
 			var data = await MakeRequestOkexAsync(marketSymbol,
 				"/swap/v3/instruments/$SYMBOL$/ticker", baseUrl: BaseUrlV3);
-            return await ParseTickerV3Async(data.Item2, data.Item1);
-        }
+			return await ParseTickerV3Async(data.Item2, data.Item1);
+		}
 
-        protected override async Task<IEnumerable<KeyValuePair<string, ExchangeTicker>>> OnGetTickersAsync()
+		protected override async Task<IEnumerable<KeyValuePair<string, ExchangeTicker>>> OnGetTickersAsync()
 		{
-            // V3: /api/spot/v3/instruments/ticker (/api is already included in base URL)
+			// V3: /api/spot/v3/instruments/ticker (/api is already included in base URL)
 			List<KeyValuePair<string, ExchangeTicker>> tickers = new List<KeyValuePair<string, ExchangeTicker>>();
 			parseData(await MakeRequestOkexAsync(null, "/spot/v3/instruments/ticker", BaseUrlV3));
 			if (IsFuturesAndSwapEnabled)
@@ -195,11 +195,11 @@ namespace ExchangeSharp.OKGroup
 					tickers.Add(new KeyValuePair<string, ExchangeTicker>(marketSymbol, await ParseTickerV3Async(marketSymbol, token)));
 				}
 			}
-            return tickers;
-        }
+			return tickers;
+		}
 
-        protected override async Task<IWebSocket> OnGetTradesWebSocketAsync(Func<KeyValuePair<string, ExchangeTrade>, Task> callback, params string[] marketSymbols)
-        {
+		protected override async Task<IWebSocket> OnGetTradesWebSocketAsync(Func<KeyValuePair<string, ExchangeTrade>, Task> callback, params string[] marketSymbols)
+		{
 			/*
 			 spot request:
 			{"op": "subscribe", "args": ["spot/trade:BTC-USD"]}
@@ -243,10 +243,10 @@ namespace ExchangeSharp.OKGroup
 				}
 				await callback(new KeyValuePair<string, ExchangeTrade>(symbol, trade));
 			});
-        }
+		}
 
-        protected override async Task<IWebSocket> OnGetDeltaOrderBookWebSocketAsync(Action<ExchangeOrderBook> callback, int maxCount = 20, params string[] marketSymbols)
-        {
+		protected override async Task<IWebSocket> OnGetDeltaOrderBookWebSocketAsync(Action<ExchangeOrderBook> callback, int maxCount = 20, params string[] marketSymbols)
+		{
 			/*
 			 request:
 			{"op": "subscribe", "args": ["swap/depth:BTC-USD-SWAP"]}
@@ -284,39 +284,39 @@ namespace ExchangeSharp.OKGroup
 			 */
 
 			return await ConnectWebSocketOkexAsync(async (_socket) =>
-            {
-                marketSymbols = await AddMarketSymbolsToChannel(_socket, "/depth:{0}", marketSymbols);
-            }, (_socket, symbol, sArray, token) =>
-            {
-					 ExchangeOrderBook book = ExchangeAPIExtensions.ParseOrderBookFromJTokenArrays(token);
-                book.MarketSymbol = symbol;
-                callback(book);
-                return Task.CompletedTask;
-            });
-        }
+			{
+				marketSymbols = await AddMarketSymbolsToChannel(_socket, "/depth:{0}", marketSymbols);
+			}, (_socket, symbol, sArray, token) =>
+			{
+				ExchangeOrderBook book = ExchangeAPIExtensions.ParseOrderBookFromJTokenArrays(token);
+				book.MarketSymbol = symbol;
+				callback(book);
+				return Task.CompletedTask;
+			});
+		}
 
-        protected override async Task<ExchangeOrderBook> OnGetOrderBookAsync(string marketSymbol, int maxCount = 100)
-        {
-            var token = await MakeRequestOkexAsync(marketSymbol, $"/spot/v3/instruments/{marketSymbol}/book", BaseUrlV3);
+		protected override async Task<ExchangeOrderBook> OnGetOrderBookAsync(string marketSymbol, int maxCount = 100)
+		{
+			var token = await MakeRequestOkexAsync(marketSymbol, $"/spot/v3/instruments/{marketSymbol}/book", BaseUrlV3);
 
-            return token.Item1.ParseOrderBookFromJTokenArrays();
-        }
+			return token.Item1.ParseOrderBookFromJTokenArrays();
+		}
 
-        protected override async Task OnGetHistoricalTradesAsync(Func<IEnumerable<ExchangeTrade>, bool> callback, string marketSymbol, DateTime? startDate = null, DateTime? endDate = null, int? limit = null)
-        {
-            List<ExchangeTrade> allTrades = new List<ExchangeTrade>();
-            var trades = await MakeRequestOkexAsync(marketSymbol, "/trades.do?symbol=$SYMBOL$");
-            foreach (JToken trade in trades.Item1)
-            {
-                // [ { "date": "1367130137", "date_ms": "1367130137000", "price": 787.71, "amount": 0.003, "tid": "230433", "type": "sell" } ]
-                allTrades.Add(trade.ParseTrade("amount", "price", "type", "date_ms", TimestampType.UnixMilliseconds, "tid"));
-            }
-            callback(allTrades);
-        }
+		protected override async Task OnGetHistoricalTradesAsync(Func<IEnumerable<ExchangeTrade>, bool> callback, string marketSymbol, DateTime? startDate = null, DateTime? endDate = null, int? limit = null)
+		{
+			List<ExchangeTrade> allTrades = new List<ExchangeTrade>();
+			var trades = await MakeRequestOkexAsync(marketSymbol, "/trades.do?symbol=$SYMBOL$");
+			foreach (JToken trade in trades.Item1)
+			{
+				// [ { "date": "1367130137", "date_ms": "1367130137000", "price": 787.71, "amount": 0.003, "tid": "230433", "type": "sell" } ]
+				allTrades.Add(trade.ParseTrade("amount", "price", "type", "date_ms", TimestampType.UnixMilliseconds, "tid"));
+			}
+			callback(allTrades);
+		}
 
-        protected override async Task<IEnumerable<MarketCandle>> OnGetCandlesAsync(string marketSymbol, int periodSeconds, DateTime? startDate = null, DateTime? endDate = null, int? limit = null)
-        {
-            /*
+		protected override async Task<IEnumerable<MarketCandle>> OnGetCandlesAsync(string marketSymbol, int periodSeconds, DateTime? startDate = null, DateTime? endDate = null, int? limit = null)
+		{
+			/*
              [
 	            1417564800000,	timestamp
 	            384.47,		open
@@ -327,32 +327,32 @@ namespace ExchangeSharp.OKGroup
             ]
             */
 
-            List<MarketCandle> candles = new List<MarketCandle>();
-            string url = "/kline.do?symbol=" + marketSymbol;
-            if (startDate != null)
-            {
-                url += "&since=" + (long)startDate.Value.UnixTimestampFromDateTimeMilliseconds();
-            }
-            if (limit != null)
-            {
-                url += "&size=" + (limit.Value.ToStringInvariant());
-            }
-            string periodString = PeriodSecondsToString(periodSeconds);
-            url += "&type=" + periodString;
-            JToken obj = await MakeJsonRequestAsync<JToken>(url);
-            foreach (JArray token in obj)
-            {
-                candles.Add(this.ParseCandle(token, marketSymbol, periodSeconds, 1, 2, 3, 4, 0, TimestampType.UnixMilliseconds, 5));
-            }
-            return candles;
-        }
+			List<MarketCandle> candles = new List<MarketCandle>();
+			string url = "/kline.do?symbol=" + marketSymbol;
+			if (startDate != null)
+			{
+				url += "&since=" + (long)startDate.Value.UnixTimestampFromDateTimeMilliseconds();
+			}
+			if (limit != null)
+			{
+				url += "&size=" + (limit.Value.ToStringInvariant());
+			}
+			string periodString = PeriodSecondsToString(periodSeconds);
+			url += "&type=" + periodString;
+			JToken obj = await MakeJsonRequestAsync<JToken>(url);
+			foreach (JArray token in obj)
+			{
+				candles.Add(this.ParseCandle(token, marketSymbol, periodSeconds, 1, 2, 3, 4, 0, TimestampType.UnixMilliseconds, 5));
+			}
+			return candles;
+		}
 
-	#endregion
+		#endregion
 
 		#region Private APIs
 		protected override async Task<Dictionary<string, decimal>> OnGetAmountsAsync()
-        {
-            /*
+		{
+			/*
              {
 			  "result": true,
 			  "info": {
@@ -382,46 +382,46 @@ namespace ExchangeSharp.OKGroup
 			  }
 			}
              */
-            Dictionary<string, decimal> amounts = new Dictionary<string, decimal>();
-            var payload = await GetNoncePayloadAsync();
-            JToken token = await MakeJsonRequestAsync<JToken>("/userinfo.do", BaseUrl, payload, "POST");
-            var funds = token["info"]["funds"];
+			Dictionary<string, decimal> amounts = new Dictionary<string, decimal>();
+			var payload = await GetNoncePayloadAsync();
+			JToken token = await MakeJsonRequestAsync<JToken>("/userinfo.do", BaseUrl, payload, "POST");
+			var funds = token["info"]["funds"];
 
-            foreach (JProperty fund in funds)
-            {
-                ParseAmounts(fund.Value, amounts);
-            }
-            return amounts;
-        }
+			foreach (JProperty fund in funds)
+			{
+				ParseAmounts(fund.Value, amounts);
+			}
+			return amounts;
+		}
 
-        protected override async Task<Dictionary<string, decimal>> OnGetAmountsAvailableToTradeAsync()
-        {
-            Dictionary<string, decimal> amounts = new Dictionary<string, decimal>();
-            var payload = await GetNoncePayloadAsync();
-            JToken token = await MakeJsonRequestAsync<JToken>("/userinfo.do", BaseUrl, payload, "POST");
-            var funds = token["info"]["funds"];
-            var free = funds["free"];
+		protected override async Task<Dictionary<string, decimal>> OnGetAmountsAvailableToTradeAsync()
+		{
+			Dictionary<string, decimal> amounts = new Dictionary<string, decimal>();
+			var payload = await GetNoncePayloadAsync();
+			JToken token = await MakeJsonRequestAsync<JToken>("/userinfo.do", BaseUrl, payload, "POST");
+			var funds = token["info"]["funds"];
+			var free = funds["free"];
 
-            return ParseAmounts(funds["free"], amounts);
-        }
+			return ParseAmounts(funds["free"], amounts);
+		}
 
-        protected override async Task<ExchangeOrderResult> OnPlaceOrderAsync(ExchangeOrderRequest order)
-        {
-            Dictionary<string, object> payload = await GetNoncePayloadAsync();
-            payload["symbol"] = order.MarketSymbol;
-            payload["type"] = (order.IsBuy ? "buy" : "sell");
+		protected override async Task<ExchangeOrderResult> OnPlaceOrderAsync(ExchangeOrderRequest order)
+		{
+			Dictionary<string, object> payload = await GetNoncePayloadAsync();
+			payload["symbol"] = order.MarketSymbol;
+			payload["type"] = (order.IsBuy ? "buy" : "sell");
 
-            // Okex has strict rules on which prices and quantities are allowed. They have to match the rules defined in the market definition.
-            decimal outputQuantity = await ClampOrderQuantity(order.MarketSymbol, order.Amount);
+			// Okex has strict rules on which prices and quantities are allowed. They have to match the rules defined in the market definition.
+			decimal outputQuantity = await ClampOrderQuantity(order.MarketSymbol, order.Amount);
 			if (order.Price == null) throw new ArgumentNullException(nameof(order.Price));
 			decimal outputPrice = await ClampOrderPrice(order.MarketSymbol, order.Price.Value);
 
-            if (order.OrderType == OrderType.Market)
-            {
-                // TODO: Fix later once Okex fixes this on their end
-                throw new NotSupportedException("Okex confuses price with amount while sending a market order, so market orders are disabled for now");
+			if (order.OrderType == OrderType.Market)
+			{
+				// TODO: Fix later once Okex fixes this on their end
+				throw new NotSupportedException("Okex confuses price with amount while sending a market order, so market orders are disabled for now");
 
-                /*
+				/*
                 payload["type"] += "_market";
                 if (order.IsBuy)
                 {
@@ -435,42 +435,42 @@ namespace ExchangeSharp.OKGroup
                     payload["amount"] = outputQuantity;
                 }
                 */
-            }
-            else
-            {
-                payload["price"] = outputPrice;
-                payload["amount"] = outputQuantity;
+			}
+			else
+			{
+				payload["price"] = outputPrice;
+				payload["amount"] = outputQuantity;
 				if (order.IsPostOnly == true) payload["order_type"] = "1"; // Specify 0: Normal order (Unfilled and 0 imply normal limit order) 1: Post only 2: Fill or Kill 3: Immediate Or Cancel
 			}
 			order.ExtraParameters.CopyTo(payload);
 
-            JToken obj = await MakeJsonRequestAsync<JToken>("/trade.do", BaseUrl, payload, "POST");
-            order.Amount = outputQuantity;
-            order.Price = outputPrice;
-            return ParsePlaceOrder(obj, order);
-        }
+			JToken obj = await MakeJsonRequestAsync<JToken>("/trade.do", BaseUrl, payload, "POST");
+			order.Amount = outputQuantity;
+			order.Price = outputPrice;
+			return ParsePlaceOrder(obj, order);
+		}
 
-        protected override async Task OnCancelOrderAsync(string orderId, string marketSymbol = null, bool isClientOrderId = false)
+		protected override async Task OnCancelOrderAsync(string orderId, string marketSymbol = null, bool isClientOrderId = false)
 		{
-            Dictionary<string, object> payload = await GetNoncePayloadAsync();
-            if (marketSymbol.Length == 0)
-            {
-                throw new ArgumentNullException("Okex cancel order request requires symbol");
-            }
-            payload["symbol"] = marketSymbol;
-            payload["order_id"] = orderId; // OKCoin can use either OID or ClientOID: POST /api/spot/v3/cancel_orders/<order_id> or <client_oid>
+			Dictionary<string, object> payload = await GetNoncePayloadAsync();
+			if (marketSymbol.Length == 0)
+			{
+				throw new ArgumentNullException("Okex cancel order request requires symbol");
+			}
+			payload["symbol"] = marketSymbol;
+			payload["order_id"] = orderId; // OKCoin can use either OID or ClientOID: POST /api/spot/v3/cancel_orders/<order_id> or <client_oid>
 			await MakeJsonRequestAsync<JToken>("/cancel_order.do", BaseUrl, payload, "POST");
-        }
+		}
 
-        protected override async Task<ExchangeOrderResult> OnGetOrderDetailsAsync(string orderId, string marketSymbol = null, bool isClientOrderId = false)
+		protected override async Task<ExchangeOrderResult> OnGetOrderDetailsAsync(string orderId, string marketSymbol = null, bool isClientOrderId = false)
 		{
-            List<ExchangeOrderResult> orders = new List<ExchangeOrderResult>();
-            Dictionary<string, object> payload = await GetNoncePayloadAsync();
-            if (string.IsNullOrWhiteSpace(marketSymbol))
-            {
-                throw new ArgumentNullException("OKgroup single order details request requires symbol");
-            }
-            payload["symbol"] = marketSymbol;
+			List<ExchangeOrderResult> orders = new List<ExchangeOrderResult>();
+			Dictionary<string, object> payload = await GetNoncePayloadAsync();
+			if (string.IsNullOrWhiteSpace(marketSymbol))
+			{
+				throw new ArgumentNullException("OKgroup single order details request requires symbol");
+			}
+			payload["symbol"] = marketSymbol;
 
 			if (isClientOrderId) // Either client_oid or order_id must be present.
 				payload["client_oid"] = orderId;
@@ -478,40 +478,40 @@ namespace ExchangeSharp.OKGroup
 				payload["order_id"] = orderId;
 
 			JToken token = await MakeJsonRequestAsync<JToken>("/order_info.do", BaseUrl, payload, "POST");
-            foreach (JToken order in token["orders"])
-            {
-                orders.Add(ParseOrder(order));
-            }
+			foreach (JToken order in token["orders"])
+			{
+				orders.Add(ParseOrder(order));
+			}
 
-            // only return the first
-            return orders[0];
-        }
+			// only return the first
+			return orders[0];
+		}
 
-        protected override async Task<IEnumerable<ExchangeOrderResult>> OnGetOpenOrderDetailsAsync(string marketSymbol)
-        {
-            List<ExchangeOrderResult> orders = new List<ExchangeOrderResult>();
-            Dictionary<string, object> payload = await GetNoncePayloadAsync();
+		protected override async Task<IEnumerable<ExchangeOrderResult>> OnGetOpenOrderDetailsAsync(string marketSymbol)
+		{
+			List<ExchangeOrderResult> orders = new List<ExchangeOrderResult>();
+			Dictionary<string, object> payload = await GetNoncePayloadAsync();
 
-            payload["symbol"] = marketSymbol;
-            // if order_id is -1, then return all unfilled orders, otherwise return the order specified
-            payload["order_id"] = -1;
-            JToken token = await MakeJsonRequestAsync<JToken>("/order_info.do", BaseUrl, payload, "POST");
-            foreach (JToken order in token["orders"])
-            {
-                orders.Add(ParseOrder(order));
-            }
+			payload["symbol"] = marketSymbol;
+			// if order_id is -1, then return all unfilled orders, otherwise return the order specified
+			payload["order_id"] = -1;
+			JToken token = await MakeJsonRequestAsync<JToken>("/order_info.do", BaseUrl, payload, "POST");
+			foreach (JToken order in token["orders"])
+			{
+				orders.Add(ParseOrder(order));
+			}
 
-            return orders;
-        }
-        #endregion
+			return orders;
+		}
+		#endregion
 
-         #region WebSocket Functions
+		#region WebSocket Functions
 
-        protected virtual Task<IWebSocket> ConnectWebSocketOkexAsync(Func<IWebSocket, Task> connected, Func<IWebSocket, string, string[], JToken, Task> callback, int symbolArrayIndex = 3)
-        {
+		protected virtual Task<IWebSocket> ConnectWebSocketOkexAsync(Func<IWebSocket, Task> connected, Func<IWebSocket, string, string[], JToken, Task> callback, int symbolArrayIndex = 3)
+		{
 			Timer pingTimer = null;
-            return ConnectPublicWebSocketAsync(url: string.Empty, messageCallback: async (_socket, msg) =>
-            {
+			return ConnectPublicWebSocketAsync(url: string.Empty, messageCallback: async (_socket, msg) =>
+			{
 				// https://github.com/okcoin-okex/API-docs-OKEx.com/blob/master/README-en.md
 				// All the messages returning from WebSocket API will be optimized by Deflate compression
 				var msgString = msg.ToStringFromUTF8Deflate();
@@ -519,10 +519,10 @@ namespace ExchangeSharp.OKGroup
 				{ // received reply to our ping
 					return;
 				}
-                JToken token = JToken.Parse(msgString);
-                var eventProperty = token["event"]?.ToStringInvariant();
-                if (eventProperty != null)
-                {
+				JToken token = JToken.Parse(msgString);
+				var eventProperty = token["event"]?.ToStringInvariant();
+				if (eventProperty != null)
+				{
 					if (eventProperty == "error")
 					{
 						Logger.Info("Websocket unable to connect: " + token["message"]?.ToStringInvariant());
@@ -540,43 +540,43 @@ namespace ExchangeSharp.OKGroup
 					else return;
 				}
 				else if (token["table"] != null)
-                {
-	                var data = token["data"];
-	                foreach (var dataRow in data)
-	                {
-		                var marketSymbol = dataRow["instrument_id"].ToStringInvariant();
-		                await callback(_socket, marketSymbol, null, dataRow);
+				{
+					var data = token["data"];
+					foreach (var dataRow in data)
+					{
+						var marketSymbol = dataRow["instrument_id"].ToStringInvariant();
+						await callback(_socket, marketSymbol, null, dataRow);
 					}
-                }
-            }, connectCallback: async (_socket) => await connected(_socket)
+				}
+			}, connectCallback: async (_socket) => await connected(_socket)
 			, disconnectCallback: s =>
 			{
 				pingTimer.Dispose();
 				pingTimer = null;
 				return Task.CompletedTask;
 			});
-        }
+		}
 
-        protected virtual Task<IWebSocket> ConnectPrivateWebSocketOkexAsync(Func<IWebSocket, Task> connected, Func<IWebSocket, string, string[], JToken, Task> callback, int symbolArrayIndex = 3)
-        {
-            return ConnectWebSocketOkexAsync(async (_socket) =>
-            {
-                await _socket.SendMessageAsync(GetAuthForWebSocket());
-            }, async (_socket, symbol, sArray, token) =>
-            {
-                if (symbol == "login")
-                {
-                    await connected(_socket);
-                }
-                else
-                {
-                    await callback(_socket, symbol, sArray, token);
-                }
-            }, 0);
-        }
+		protected virtual Task<IWebSocket> ConnectPrivateWebSocketOkexAsync(Func<IWebSocket, Task> connected, Func<IWebSocket, string, string[], JToken, Task> callback, int symbolArrayIndex = 3)
+		{
+			return ConnectWebSocketOkexAsync(async (_socket) =>
+			{
+				await _socket.SendMessageAsync(GetAuthForWebSocket());
+			}, async (_socket, symbol, sArray, token) =>
+			{
+				if (symbol == "login")
+				{
+					await connected(_socket);
+				}
+				else
+				{
+					await callback(_socket, symbol, sArray, token);
+				}
+			}, 0);
+		}
 
-        protected virtual async Task<string[]> AddMarketSymbolsToChannel(IWebSocket socket, string channelFormat, string[] marketSymbols)
-        {
+		protected virtual async Task<string[]> AddMarketSymbolsToChannel(IWebSocket socket, string channelFormat, string[] marketSymbols)
+		{
 			if (marketSymbols == null || marketSymbols.Length == 0)
 			{
 				marketSymbols = (await GetMarketSymbolsAsync()).ToArray();
@@ -598,35 +598,35 @@ namespace ExchangeSharp.OKGroup
 						.ToArray();
 				await socket.SendMessageAsync(new { op = "subscribe", args = channels });
 			}
-            return marketSymbols;
-        }
+			return marketSymbols;
+		}
 
-        protected string GetInstrumentType(string marketSymbol)
-        {
-	        string type;
-	        if (marketSymbol.Split('-').Length == 3 && marketSymbol.Split('-')[2] == "SWAP")
-	        {
-		        type = "swap";
-	        }
-	        else if (marketSymbol.Split('-').Length == 3 && int.TryParse(marketSymbol.Split('-')[2], out _))
-	        {
-		        type = "futures";
-	        }
-	        else
-	        {
-		        type = "spot";
-	        }
-	        return type;
-        }
-        #endregion
+		protected string GetInstrumentType(string marketSymbol)
+		{
+			string type;
+			if (marketSymbol.Split('-').Length == 3 && marketSymbol.Split('-')[2] == "SWAP")
+			{
+				type = "swap";
+			}
+			else if (marketSymbol.Split('-').Length == 3 && int.TryParse(marketSymbol.Split('-')[2], out _))
+			{
+				type = "futures";
+			}
+			else
+			{
+				type = "spot";
+			}
+			return type;
+		}
+		#endregion
 
-        #region Private Functions
+		#region Private Functions
 
-        private async Task<ExchangeTicker> ParseTickerAsync(string symbol, JToken data)
-        {
-            //{"date":"1518043621","ticker":{"high":"0.01878000","vol":"1911074.97335534","last":"0.01817627","low":"0.01813515","buy":"0.01817626","sell":"0.01823447"}}
-            return await this.ParseTickerAsync(data["ticker"], symbol, "sell", "buy", "last", "vol", null, "date", TimestampType.UnixSeconds);
-        }
+		private async Task<ExchangeTicker> ParseTickerAsync(string symbol, JToken data)
+		{
+			//{"date":"1518043621","ticker":{"high":"0.01878000","vol":"1911074.97335534","last":"0.01817627","low":"0.01813515","buy":"0.01817626","sell":"0.01823447"}}
+			return await this.ParseTickerAsync(data["ticker"], symbol, "sell", "buy", "last", "vol", null, "date", TimestampType.UnixSeconds);
+		}
 
 		private async Task<ExchangeTicker> ParseTickerV2Async(string symbol, JToken ticker)
 		{
@@ -677,61 +677,61 @@ namespace ExchangeSharp.OKGroup
 		}
 
 		private Dictionary<string, decimal> ParseAmounts(JToken token, Dictionary<string, decimal> amounts)
-        {
-            foreach (JProperty prop in token)
-            {
-                var amount = prop.Value.ConvertInvariant<decimal>();
-                if (amount == 0m)
-                    continue;
+		{
+			foreach (JProperty prop in token)
+			{
+				var amount = prop.Value.ConvertInvariant<decimal>();
+				if (amount == 0m)
+					continue;
 
-                if (amounts.ContainsKey(prop.Name))
-                {
-                    amounts[prop.Name] += amount;
-                }
-                else
-                {
-                    amounts[prop.Name] = amount;
-                }
-            }
-            return amounts;
-        }
+				if (amounts.ContainsKey(prop.Name))
+				{
+					amounts[prop.Name] += amount;
+				}
+				else
+				{
+					amounts[prop.Name] = amount;
+				}
+			}
+			return amounts;
+		}
 
-        private ExchangeOrderResult ParsePlaceOrder(JToken token, ExchangeOrderRequest order)
-        {
-            /*
+		private ExchangeOrderResult ParsePlaceOrder(JToken token, ExchangeOrderRequest order)
+		{
+			/*
               {"result":true,"order_id":123456}
             */
-            ExchangeOrderResult result = new ExchangeOrderResult
-            {
-                Amount = order.Amount,
-                Price = order.Price,
-                IsBuy = order.IsBuy,
-                OrderId = token["order_id"].ToStringInvariant(),
-                MarketSymbol = order.MarketSymbol
-            };
-            result.AveragePrice = result.Price;
-            result.Result = ExchangeAPIOrderResult.Open;
+			ExchangeOrderResult result = new ExchangeOrderResult
+			{
+				Amount = order.Amount,
+				Price = order.Price,
+				IsBuy = order.IsBuy,
+				OrderId = token["order_id"].ToStringInvariant(),
+				MarketSymbol = order.MarketSymbol
+			};
+			result.AveragePrice = result.Price;
+			result.Result = ExchangeAPIOrderResult.Open;
 
-            return result;
-        }
+			return result;
+		}
 
-        private ExchangeAPIOrderResult ParseOrderStatus(int status)
-        {
+		private ExchangeAPIOrderResult ParseOrderStatus(int status)
+		{
 			// OKCoin: 	Order Status: -2 = Failed -1 = Canceled 0 = Open 1 = Partially Filled 2 = Fully Filled 3 = Submitting 4 = Canceling 6 = Incomplete (open + partially filled) 7 = Complete (canceled + fully filled)
 			// OKEx: 	Order Status: -2 = Failed -1 = Canceled 0 = Open 1 = Partially Filled 2 = Fully Filled 3 = Submitting 4 = Canceling
 			// (not sure where these old statuses came from) status: -1 = cancelled, 0 = unfilled, 1 = partially filled, 2 = fully filled, 3 = cancel request in process
 			switch (status)
-            {
+			{
 				case -2:
 					return ExchangeAPIOrderResult.Rejected;
 				case -1:
 					return ExchangeAPIOrderResult.Canceled;
 				case 0:
-                    return ExchangeAPIOrderResult.Open;
-                case 1:
-                    return ExchangeAPIOrderResult.FilledPartially;
-                case 2:
-                    return ExchangeAPIOrderResult.Filled;
+					return ExchangeAPIOrderResult.Open;
+				case 1:
+					return ExchangeAPIOrderResult.FilledPartially;
+				case 2:
+					return ExchangeAPIOrderResult.Filled;
 				case 3:
 					return ExchangeAPIOrderResult.PendingOpen;
 				case 4:
@@ -745,9 +745,9 @@ namespace ExchangeSharp.OKGroup
 			}
 		}
 
-        private ExchangeOrderResult ParseOrder(JToken token)
-        {
-            /*
+		private ExchangeOrderResult ParseOrder(JToken token)
+		{
+			/*
             {
 			"result": true,
 			"orders": [
@@ -764,21 +764,21 @@ namespace ExchangeSharp.OKGroup
 					"type": "sell"
 			},
             */
-            ExchangeOrderResult result = new ExchangeOrderResult
-            {
-                Amount = token["amount"].ConvertInvariant<decimal>(),
-                AmountFilled = token["deal_amount"].ConvertInvariant<decimal>(),
-                Price = token["price"].ConvertInvariant<decimal>(),
-                AveragePrice = token["avg_price"].ConvertInvariant<decimal>(),
-                IsBuy = token["type"].ToStringInvariant().StartsWith("buy"),
-                OrderDate = CryptoUtility.UnixTimeStampToDateTimeMilliseconds(token["create_date"].ConvertInvariant<long>()),
-                OrderId = token["order_id"].ToStringInvariant(),
-                MarketSymbol = token["symbol"].ToStringInvariant(),
-                Result = ParseOrderStatus(token["status"].ConvertInvariant<int>()),
-            };
+			ExchangeOrderResult result = new ExchangeOrderResult
+			{
+				Amount = token["amount"].ConvertInvariant<decimal>(),
+				AmountFilled = token["deal_amount"].ConvertInvariant<decimal>(),
+				Price = token["price"].ConvertInvariant<decimal>(),
+				AveragePrice = token["avg_price"].ConvertInvariant<decimal>(),
+				IsBuy = token["type"].ToStringInvariant().StartsWith("buy"),
+				OrderDate = CryptoUtility.UnixTimeStampToDateTimeMilliseconds(token["create_date"].ConvertInvariant<long>()),
+				OrderId = token["order_id"].ToStringInvariant(),
+				MarketSymbol = token["symbol"].ToStringInvariant(),
+				Result = ParseOrderStatus(token["status"].ConvertInvariant<int>()),
+			};
 
-            return result;
-        }
-        #endregion
+			return result;
+		}
+		#endregion
 	}
 }

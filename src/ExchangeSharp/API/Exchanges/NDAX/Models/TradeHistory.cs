@@ -1,5 +1,5 @@
-using System;
 using Newtonsoft.Json;
+using System;
 
 namespace ExchangeSharp
 {
@@ -90,5 +90,5 @@ namespace ExchangeSharp
 				};
 			}
 		}
-    }
+	}
 }

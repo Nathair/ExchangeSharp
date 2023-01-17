@@ -10,6 +10,8 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +19,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ExchangeSharp
 {
@@ -409,12 +408,12 @@ namespace ExchangeSharp
 				var authPayload = $"GET/realtime{nonce}";
 				string signature = CryptoUtility.SHA256Sign(authPayload, CryptoUtility.ToUnsecureBytesUTF8(PrivateApiKey));
 
-				var authArgs = new object[]{PublicApiKey.ToUnsecureString(), nonce, signature};
+				var authArgs = new object[] { PublicApiKey.ToUnsecureString(), nonce, signature };
 				await _socket.SendMessageAsync(new { op = "authKeyExpires", args = authArgs });
 				await _socket.SendMessageAsync(new { op = "subscribe", args = "position" });
 			});
 		}
-		
+
 
 		protected override async Task<IEnumerable<MarketCandle>> OnGetCandlesAsync(string marketSymbol, int periodSeconds, DateTime? startDate = null, DateTime? endDate = null, int? limit = null)
 		{
@@ -637,7 +636,7 @@ namespace ExchangeSharp
 			payload[isClientOrderId ? "clOrdID" : "orderID"] = orderId;
 			JToken token = await MakeJsonRequestAsync<JToken>("/order", BaseUrl, payload, "DELETE");
 		}
-	
+
 		public async Task CancelAllOrdersAsync(string marketSymbol = null)
 		{
 			Dictionary<string, object> payload = await GetNoncePayloadAsync();
@@ -655,7 +654,7 @@ namespace ExchangeSharp
 			payload["timeout"] = timeoutMS;
 			JToken token = await MakeJsonRequestAsync<JToken>("/order/cancelAllAfter", BaseUrl, payload, "POST");
 		}
-		
+
 		protected override async Task<ExchangeOrderResult> OnPlaceOrderAsync(ExchangeOrderRequest order)
 		{
 			Dictionary<string, object> payload = await GetNoncePayloadAsync();
@@ -701,13 +700,13 @@ namespace ExchangeSharp
 			payload["side"] = order.IsBuy ? "Buy" : "Sell";
 			payload["orderQty"] = order.Amount;
 
-			if(order.OrderId != null)
+			if (order.OrderId != null)
 				payload["orderID"] = order.OrderId;
 
-			if(order.ClientOrderId != null)
+			if (order.ClientOrderId != null)
 				payload["clOrdID"] = order.ClientOrderId;
 
-			if(order.OrderType!=OrderType.Market)
+			if (order.OrderType != OrderType.Market)
 				payload["price"] = order.Price;
 
 			if (order.IsPostOnly == true)

@@ -10,6 +10,8 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,9 +20,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ExchangeSharp
 {
@@ -95,10 +94,10 @@ namespace ExchangeSharp
 			}
 			return result;
 		}
-   
+
 		private JToken CheckRetCode(JToken response)
 		{
-			return CheckRetCode(response, new string[] {"0"});
+			return CheckRetCode(response, new string[] { "0" });
 		}
 
 		private JToken GetResult(JToken response, out string retCode, out string retMessage)
@@ -108,11 +107,12 @@ namespace ExchangeSharp
 			return response["result"];
 		}
 
-		private async Task SendWebsocketAuth(IWebSocket socket) {
+		private async Task SendWebsocketAuth(IWebSocket socket)
+		{
 			var payload = await GetNoncePayloadAsync();
 			var nonce = (payload["nonce"].ConvertInvariant<long>() + 5000).ToStringInvariant();
 			var signature = CryptoUtility.SHA256Sign($"GET/realtime{nonce}", CryptoUtility.ToUnsecureBytesUTF8(PrivateApiKey));
-			await socket.SendMessageAsync(new { op = "auth", args = new [] {PublicApiKey.ToUnsecureString(), nonce, signature} });
+			await socket.SendMessageAsync(new { op = "auth", args = new[] { PublicApiKey.ToUnsecureString(), nonce, signature } });
 		}
 
 		private async Task<Dictionary<string, object>> GetAuthenticatedPayload(Dictionary<string, object> requestPayload = null)
@@ -122,7 +122,7 @@ namespace ExchangeSharp
 			payload.Remove("nonce");
 			payload["api_key"] = PublicApiKey.ToUnsecureString();
 			payload["timestamp"] = nonce.ToStringInvariant();
-			payload["recv_window"] = _recvWindow; 
+			payload["recv_window"] = _recvWindow;
 			if (requestPayload != null)
 			{
 				payload = payload.Concat(requestPayload).ToDictionary(p => p.Key, p => p.Value);
@@ -162,7 +162,7 @@ namespace ExchangeSharp
 				{
 					var data = token["data"];
 					await callback(_socket, data);
-				} 
+				}
 				else
 				{
 					/*
@@ -181,7 +181,7 @@ namespace ExchangeSharp
 					*/
 					JToken response = token["request"];
 					var op = response["op"]?.ToStringInvariant();
-					if ((response != null) && ((op == "subscribe") || (op == "auth"))) 
+					if ((response != null) && ((op == "subscribe") || (op == "auth")))
 					{
 						var responseMessage = token["ret_msg"]?.ToStringInvariant();
 						if (responseMessage != "")
@@ -209,12 +209,12 @@ namespace ExchangeSharp
 						}
 					}
 				}
-			}, 
-			connectCallback: async (_socket) => 
+			},
+			connectCallback: async (_socket) =>
 			{
 				await connected(_socket);
 				_socket.ConnectInterval = TimeSpan.FromHours(0);
-			}, 
+			},
 			disconnectCallback: s =>
 			{
 				pingTimer.Dispose();
@@ -229,17 +229,17 @@ namespace ExchangeSharp
 			if (marketSymbols == null || marketSymbols.Length == 0)
 			{
 				fullArgs += "*";
-			} 
-			else 
+			}
+			else
 			{
 				foreach (var symbol in marketSymbols)
 				{
 					fullArgs += symbol + "|";
-				} 
+				}
 				fullArgs = fullArgs.TrimEnd('|');
 			}
 
-			await socket.SendMessageAsync(new { op = "subscribe", args = new [] {fullArgs} });
+			await socket.SendMessageAsync(new { op = "subscribe", args = new[] { fullArgs } });
 		}
 
 		protected override async Task<IWebSocket> OnGetTradesWebSocketAsync(Func<KeyValuePair<string, ExchangeTrade>, Task> callback, params string[] marketSymbols)
@@ -275,11 +275,11 @@ namespace ExchangeSharp
 				foreach (var dataRow in token)
 				{
 					var trade = dataRow.ParseTradeBybit(
-						amountKey: "size", 
+						amountKey: "size",
 						priceKey: "price",
-						typeKey: "side", 
+						typeKey: "side",
 						timestampKey: "trade_time_ms",
-						timestampType: TimestampType.UnixMilliseconds, 
+						timestampType: TimestampType.UnixMilliseconds,
 						idKey: "trade_id");
 					await callback(new KeyValuePair<string, ExchangeTrade>(dataRow["symbol"].ToStringInvariant(), trade));
 				}
@@ -334,7 +334,7 @@ namespace ExchangeSharp
 			return await DoConnectWebSocketAsync(async (_socket) =>
 			{
 				await SendWebsocketAuth(_socket);
-				await _socket.SendMessageAsync(new { op = "subscribe", args = new [] {"position"} });
+				await _socket.SendMessageAsync(new { op = "subscribe", args = new[] { "position" } });
 			}, async (_socket, token) =>
 			{
 				foreach (var dataRow in token)
@@ -490,7 +490,7 @@ namespace ExchangeSharp
 			return markets;
 		}
 
-		
+
 		private async Task<Dictionary<string, decimal>> DoGetAmountsAsync(string field)
 		{
 			/*
@@ -587,7 +587,7 @@ namespace ExchangeSharp
 			*/
 			var tokens = CheckRetCode(await DoMakeJsonRequestAsync<JToken>($"/v2/public/orderBook/L2?symbol={marketSymbol}"));
 			var orderBook = new ExchangeOrderBook();
-			foreach (var token in tokens) 
+			foreach (var token in tokens)
 			{
 				var orderPrice = new ExchangeOrderPrice();
 				orderPrice.Price = token["price"].ConvertInvariant<decimal>();
@@ -722,7 +722,7 @@ namespace ExchangeSharp
 		{
 			var extraParams = new Dictionary<string, object>();
 
-			if (orderId != null) 
+			if (orderId != null)
 			{
 				if (isClientOrderId)
 					extraParams["order_link_id"] = orderId;
@@ -738,12 +738,12 @@ namespace ExchangeSharp
 			{
 				throw new Exception("marketSymbol is required");
 			}
-			
+
 			var queryString = await GetAuthenticatedQueryString(extraParams);
 			JToken token = GetResult(await DoMakeJsonRequestAsync<JToken>($"/v2/private/order?" + queryString, BaseUrl, null, "GET"), out var retCode, out var retMessage);
 
 			List<ExchangeOrderResult> orders = new List<ExchangeOrderResult>();
-			if (orderId == null) 
+			if (orderId == null)
 			{
 				foreach (JToken order in token)
 				{
@@ -793,13 +793,13 @@ namespace ExchangeSharp
 			{
 				throw new Exception("marketSymbol is required");
 			}
-			
+
 			var payload = await GetAuthenticatedPayload(extraParams);
 			CheckRetCode(await DoMakeJsonRequestAsync<JToken>($"/v2/private/order/cancel", BaseUrl, payload, "POST"));
-				// new string[] {"0", "30032"});
-				//30032: order has been finished or canceled
+			// new string[] {"0", "30032"});
+			//30032: order has been finished or canceled
 		}
-	
+
 		public async Task CancelAllOrdersAsync(string marketSymbol)
 		{
 			var extraParams = new Dictionary<string, object>();
@@ -822,15 +822,15 @@ namespace ExchangeSharp
 			if (order.IsPostOnly != null) throw new NotSupportedException("Post Only orders are not supported by this exchange or not implemented in ExchangeSharp. Please submit a PR if you are interested in this feature.");
 			var payload = new Dictionary<string, object>();
 			payload["symbol"] = order.MarketSymbol;
-			if(order.OrderId != null)
+			if (order.OrderId != null)
 				payload["order_id"] = order.OrderId;
-			else if(order.ClientOrderId != null)
+			else if (order.ClientOrderId != null)
 				payload["order_link_id"] = order.ClientOrderId;
-			else 
+			else
 				throw new Exception("Need either OrderId or ClientOrderId");
 
-			payload["p_r_qty"] = (long) await ClampOrderQuantity(order.MarketSymbol, order.Amount);
-			if(order.OrderType!=OrderType.Market)
+			payload["p_r_qty"] = (long)await ClampOrderQuantity(order.MarketSymbol, order.Amount);
+			if (order.OrderType != OrderType.Market)
 				payload["p_r_price"] = order.Price;
 
 			payload = await GetAuthenticatedPayload(payload);
@@ -865,10 +865,10 @@ namespace ExchangeSharp
 			payload["order_type"] = order.OrderType.ToStringInvariant();
 			payload["qty"] = await ClampOrderQuantity(order.MarketSymbol, order.Amount);
 
-			if(order.OrderType!=OrderType.Market)
+			if (order.OrderType != OrderType.Market)
 				payload["price"] = order.Price;
 
-			if(order.ClientOrderId != null)
+			if (order.ClientOrderId != null)
 				payload["order_link_id"] = order.ClientOrderId;
 
 			if (order.ExtraParameters.TryGetValue("reduce_only", out var reduceOnly))

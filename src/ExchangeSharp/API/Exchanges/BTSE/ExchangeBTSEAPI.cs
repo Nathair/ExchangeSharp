@@ -72,7 +72,7 @@ namespace ExchangeSharp
 			var payload = await GetNoncePayloadAsync();
 
 			payload["order_id"] = orderId.ConvertInvariant<long>();
-			var url = new UriBuilder(BaseUrl) {Path = "/api/v3.1/order"};
+			var url = new UriBuilder(BaseUrl) { Path = "/api/v3.1/order" };
 			url.AppendPayloadToQuery(new Dictionary<string, object>()
 			{
 				{"symbol", marketSymbol},
@@ -110,13 +110,13 @@ namespace ExchangeSharp
 			if (marketSymbol == null) throw new ArgumentNullException(nameof(marketSymbol));
 			var payload = await GetNoncePayloadAsync();
 
-			var url = new UriBuilder(BaseUrl) {Path = "/api/v3.1/user/open_orders"};
+			var url = new UriBuilder(BaseUrl) { Path = "/api/v3.1/user/open_orders" };
 			url.AppendPayloadToQuery(new Dictionary<string, object>()
 			{
 				{"symbol", marketSymbol}
 			});
 
-			var result = await MakeJsonRequestAsync<JToken>("/api/v3.1/user/open_orders"+url.Query,
+			var result = await MakeJsonRequestAsync<JToken>("/api/v3.1/user/open_orders" + url.Query,
 				requestMethod: "GET", payload: payload);
 
 			return Extract2(result, token => new ExchangeOrderResult()
@@ -151,14 +151,15 @@ namespace ExchangeSharp
 		}
 
 		protected override async Task<ExchangeOrderResult> OnPlaceOrderAsync(ExchangeOrderRequest request)
-		{var payload = await GetNoncePayloadAsync();
+		{
+			var payload = await GetNoncePayloadAsync();
 
 			var dict = new Dictionary<string, object>();
 
 			var id = request.OrderId ?? request.ClientOrderId;
 			if (!string.IsNullOrEmpty(id))
 			{
-				dict.Add("clOrderID",id);
+				dict.Add("clOrderID", id);
 
 			}
 
@@ -167,7 +168,7 @@ namespace ExchangeSharp
 			dict.Add("symbol", request.MarketSymbol);
 			if (request.IsPostOnly != null) payload["postOnly"] = request.IsPostOnly;
 
-			switch (request.OrderType )
+			switch (request.OrderType)
 			{
 				case OrderType.Limit:
 					dict.Add("txType", "LIMIT");
@@ -343,7 +344,7 @@ namespace ExchangeSharp
 
 			var result = await MakeJsonRequestAsync<JToken>("/api/v3.1/user/wallet",
 				requestMethod: "GET", payload: payload);
-			return Extract(result, token => (token["currency"].Value<string>(), token[availableOnly?"available": "total"].Value<decimal>()));
+			return Extract(result, token => (token["currency"].Value<string>(), token[availableOnly ? "available" : "total"].Value<decimal>()));
 		}
 
 	}

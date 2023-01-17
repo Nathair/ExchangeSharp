@@ -1,5 +1,5 @@
-using System;
 using Newtonsoft.Json;
+using System;
 
 namespace ExchangeSharp
 {
@@ -26,7 +26,7 @@ namespace ExchangeSharp
 				var currencyParts = currencyPair.Split(new[] { "_" }, StringSplitOptions.RemoveEmptyEntries);
 				return new ExchangeTicker()
 				{
-					Exchange  = exchangeName,
+					Exchange = exchangeName,
 					MarketSymbol = currencyPair,
 					Ask = LowestAsk.GetValueOrDefault(),
 					Bid = HighestBid.GetValueOrDefault(),

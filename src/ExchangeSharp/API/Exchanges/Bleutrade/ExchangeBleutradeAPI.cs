@@ -10,17 +10,16 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 
-using Newtonsoft.Json.Linq;
-
 namespace ExchangeSharp
 {
-	// this exchange dropped v2 api, needs to be entirely re-coded
+    // this exchange dropped v2 api, needs to be entirely re-coded
 #if HAS_FIXED_BLEUTRADE_API
 
     public sealed partial class ExchangeBleutradeAPI : ExchangeAPI
@@ -34,7 +33,7 @@ namespace ExchangeSharp
 			ExchangeGlobalCurrencyReplacements["BCC"] = "BCH";
         }
 
-	#region ProcessRequest
+    #region ProcessRequest
 
 				protected override Task ProcessRequestAsync(IHttpWebRequest request, Dictionary<string, object> payload)
 				{
@@ -56,9 +55,9 @@ namespace ExchangeSharp
 					return url.Uri;
 				}
 
-	#endregion
+    #endregion
 
-	#region Public APIs
+    #region Public APIs
 
 				protected override async Task<IReadOnlyDictionary<string, ExchangeCurrency>> OnGetCurrenciesAsync()
 				{
@@ -190,9 +189,9 @@ namespace ExchangeSharp
 					return ExchangeAPIExtensions.ParseOrderBookFromJTokenDictionaries(token, "sell", "buy", "Rate", "Quantity", maxCount: maxCount);
 				}
 
-	#endregion
+    #endregion
 
-	#region Private APIs
+    #region Private APIs
 
                 protected override async Task<Dictionary<string, decimal>> OnGetAmountsAsync()
                 {
@@ -324,9 +323,9 @@ namespace ExchangeSharp
                 }
 
 
-	#endregion
+    #endregion
 
-	#region Private Functions
+    #region Private Functions
 
                 private ExchangeTrade ParseTrade(JToken token)
                 {
@@ -366,7 +365,7 @@ namespace ExchangeSharp
                     return order;
                 }
 
-	#endregion
+    #endregion
 
     }
 

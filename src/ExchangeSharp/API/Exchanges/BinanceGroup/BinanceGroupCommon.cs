@@ -106,29 +106,29 @@ namespace ExchangeSharp.BinanceGroup
 
 			return result.Where(x => !string.IsNullOrWhiteSpace(x.AssetCode))
 				.ToDictionary(x => x.AssetCode, x => new ExchangeCurrency
-			{
-				Name = x.AssetCode,
-				FullName = x.AssetName,
-				DepositEnabled = x.EnableCharge ?? false,
-				WithdrawalEnabled = x.EnableWithdraw.GetValueOrDefault(false),
-				MinConfirmations = x.ConfirmTimes.GetValueOrDefault(0),
-				MinWithdrawalSize = x.MinProductWithdraw.GetValueOrDefault(decimal.Zero),
-				TxFee = x.FeeRate.GetValueOrDefault(decimal.Zero),
-				CoinType = x.ParentCode
-			});
+				{
+					Name = x.AssetCode,
+					FullName = x.AssetName,
+					DepositEnabled = x.EnableCharge ?? false,
+					WithdrawalEnabled = x.EnableWithdraw.GetValueOrDefault(false),
+					MinConfirmations = x.ConfirmTimes.GetValueOrDefault(0),
+					MinWithdrawalSize = x.MinProductWithdraw.GetValueOrDefault(decimal.Zero),
+					TxFee = x.FeeRate.GetValueOrDefault(decimal.Zero),
+					CoinType = x.ParentCode
+				});
 		}
 
 		protected override async Task<IEnumerable<string>> OnGetMarketSymbolsAsync()
 		{
 			List<string> symbols = new List<string>();
 			JToken? obj = await MakeJsonRequestAsync<JToken>("/ticker/price", BaseUrlApi);
-            if (!(obj is null))
-            {
-                foreach (JToken token in obj)
-                {
-                    symbols.Add(token["symbol"].ToStringInvariant());
-                }
-            }
+			if (!(obj is null))
+			{
+				foreach (JToken token in obj)
+				{
+					symbols.Add(token["symbol"].ToStringInvariant());
+				}
+			}
 			return symbols;
 		}
 
@@ -374,17 +374,17 @@ namespace ExchangeSharp.BinanceGroup
 			//System.Windows.Forms.MessageBox.Show("Duplicate MessageId " + MessageId, "HMMMM RETURN?");
 
 
-		   ExchangeHistoricalTradeHelper state = new ExchangeHistoricalTradeHelper(this)
+			ExchangeHistoricalTradeHelper state = new ExchangeHistoricalTradeHelper(this)
 			{
-					Callback = callback,
-					EndDate = endDate,
-					ParseFunction = (JToken token) => token.ParseTrade("q", "p", "m", "T", TimestampType.UnixMilliseconds, "a", "false"),
-					StartDate = startDate,
-					MarketSymbol = marketSymbol,
-					TimestampFunction = (DateTime dt) => ((long)CryptoUtility.UnixTimestampFromDateTimeMilliseconds(dt)).ToStringInvariant(),
-					Url = "/aggTrades?symbol=[marketSymbol]&startTime={0}&endTime={1}",
-				};
-				await state.ProcessHistoricalTrades();
+				Callback = callback,
+				EndDate = endDate,
+				ParseFunction = (JToken token) => token.ParseTrade("q", "p", "m", "T", TimestampType.UnixMilliseconds, "a", "false"),
+				StartDate = startDate,
+				MarketSymbol = marketSymbol,
+				TimestampFunction = (DateTime dt) => ((long)CryptoUtility.UnixTimestampFromDateTimeMilliseconds(dt)).ToStringInvariant(),
+				Url = "/aggTrades?symbol=[marketSymbol]&startTime={0}&endTime={1}",
+			};
+			await state.ProcessHistoricalTrades();
 			//}
 		}
 
@@ -467,13 +467,14 @@ namespace ExchangeSharp.BinanceGroup
 
 			// TODO : Refactor into a common layer once more Exchanges implement this pattern
 			// https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#compressedaggregate-trades-list
-			if(limit > 1000) limit = 1000;	//Binance max = 1000
+			if (limit > 1000) limit = 1000; //Binance max = 1000
 			var maxRequestLimit = 1000;
 			var trades = new List<ExchangeTrade>();
 			var processedIds = new HashSet<long>();
 			marketSymbol = NormalizeMarketSymbol(marketSymbol);
 
-			do {
+			do
+			{
 				//if(fromId > endId)
 				//	break;
 
@@ -481,7 +482,8 @@ namespace ExchangeSharp.BinanceGroup
 				//var limit = Math.Min(endId - fromId ?? maxRequestLimit, maxRequestLimit);
 				var obj = await MakeJsonRequestAsync<JToken>($"/aggTrades?symbol={marketSymbol}&limit={limit}");
 
-				foreach(var token in obj) {
+				foreach (var token in obj)
+				{
 					var trade = token.ParseTrade("q", "p", "m", "T", TimestampType.UnixMilliseconds, "a", "false");
 					//long tradeId = (long)trade.Id.ConvertInvariant<ulong>();
 					//if(tradeId < fromId)
@@ -496,7 +498,7 @@ namespace ExchangeSharp.BinanceGroup
 				}
 
 				//fromId++;
-			} while(callback(trades) && trades.Count > 0);
+			} while (callback(trades) && trades.Count > 0);
 		}
 
 
@@ -524,8 +526,8 @@ namespace ExchangeSharp.BinanceGroup
 			{
 				url += "&startTime=" + (long)startDate.Value.UnixTimestampFromDateTimeMilliseconds();
 				url += "&endTime=" +
-				       ((endDate == null ? long.MaxValue : (long)endDate.Value.UnixTimestampFromDateTimeMilliseconds()))
-				       .ToStringInvariant();
+					   ((endDate == null ? long.MaxValue : (long)endDate.Value.UnixTimestampFromDateTimeMilliseconds()))
+					   .ToStringInvariant();
 			}
 
 			if (limit != null)
@@ -582,7 +584,7 @@ namespace ExchangeSharp.BinanceGroup
 				payload["type"] = "STOP_LOSS";//if order type is stop loss/limit, then binance expect word 'STOP_LOSS' inestead of 'STOP'
 			else if (order.IsPostOnly == true)
 			{
-				if (order.OrderType == OrderType.Limit)	payload["type"] = "LIMIT_MAKER"; // LIMIT_MAKER are LIMIT orders that will be rejected if they would immediately match and trade as a taker.
+				if (order.OrderType == OrderType.Limit) payload["type"] = "LIMIT_MAKER"; // LIMIT_MAKER are LIMIT orders that will be rejected if they would immediately match and trade as a taker.
 				else throw new NotSupportedException("PostOnly with non limit orders are not currently supported on Binance. Please submit a PR if you are interested in this feature");
 			}
 			else
@@ -605,10 +607,10 @@ namespace ExchangeSharp.BinanceGroup
 			order.ExtraParameters.CopyTo(payload);
 
 			JToken? token = await MakeJsonRequestAsync<JToken>("/order", BaseUrlApi, payload, "POST");
-            if (token is null)
-            {
-                return null;
-            }
+			if (token is null)
+			{
+				return null;
+			}
 			return ParseOrder(token);
 		}
 
@@ -775,7 +777,7 @@ namespace ExchangeSharp.BinanceGroup
 				payload["origClientOrderId"] = orderId;
 			else
 				payload["orderId"] = orderId;
-            var token = await MakeJsonRequestAsync<JToken>("/order", BaseUrlApi, payload, "DELETE");
+			var token = await MakeJsonRequestAsync<JToken>("/order", BaseUrlApi, payload, "DELETE");
 			var cancelledOrder = ParseOrder(token);
 			if (cancelledOrder.OrderId != orderId)
 				throw new APIException($"Cancelled {cancelledOrder.OrderId} when trying to cancel {orderId}");
@@ -1017,11 +1019,11 @@ namespace ExchangeSharp.BinanceGroup
 
 		protected override Task ProcessRequestAsync(IHttpWebRequest request, Dictionary<string, object>? payload)
 		{
-            if (CanMakeAuthenticatedRequest(payload) ||
-                (payload == null && request.RequestUri.AbsoluteUri.Contains("userDataStream")))
-            {
-                request.AddHeader("X-MBX-APIKEY", PublicApiKey!.ToUnsecureString());
-            }
+			if (CanMakeAuthenticatedRequest(payload) ||
+				(payload == null && request.RequestUri.AbsoluteUri.Contains("userDataStream")))
+			{
+				request.AddHeader("X-MBX-APIKEY", PublicApiKey!.ToUnsecureString());
+			}
 			return base.ProcessRequestAsync(request, payload);
 		}
 
@@ -1160,7 +1162,7 @@ namespace ExchangeSharp.BinanceGroup
 							break;
 						}
 					case "listStatus":
-						{	// fired as part of OCO order update
+						{   // fired as part of OCO order update
 							// var update = JsonConvert.DeserializeObject<ListStatus>(token.ToStringInvariant());
 							// no need to parse or call callback(), since OCO updates also send "executionReport"
 							break;

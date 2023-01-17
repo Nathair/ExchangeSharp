@@ -15,7 +15,7 @@ namespace ExchangeSharp.BL3P
 					continue;
 				}
 
-				var prop = (string) reader.Value;
+				var prop = (string)reader.Value;
 
 				switch (prop)
 				{

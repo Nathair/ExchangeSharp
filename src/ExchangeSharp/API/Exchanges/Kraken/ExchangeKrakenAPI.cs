@@ -10,6 +10,10 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+using ExchangeSharp.API.Exchanges.Kraken.Models.Request;
+using ExchangeSharp.API.Exchanges.Kraken.Models.Types;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,10 +23,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using ExchangeSharp.API.Exchanges.Kraken.Models.Request;
-using ExchangeSharp.API.Exchanges.Kraken.Models.Types;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ExchangeSharp
 {
@@ -496,12 +496,12 @@ namespace ExchangeSharp
 				{
 					tickers.Add(new KeyValuePair<string, ExchangeTicker>(marketSymbol, await ConvertToExchangeTickerAsync(marketSymbol, ticker)));
 				}
-				catch(Exception e)
+				catch (Exception e)
 				{
 					Logger.Error(e);
 				}
 			}
-			if(unfoundSymbols.Count > 0)
+			if (unfoundSymbols.Count > 0)
 			{
 				Logger.Warn($"Of {marketSymbols.Count()} symbols, tickers could not be found for {unfoundSymbols.Count}: [{String.Join(", ", unfoundSymbols)}]");
 			}
@@ -869,7 +869,7 @@ namespace ExchangeSharp
 					string marketSymbol = token[3].ToStringInvariant();
 					//Kraken updates the candle open time to the current time, but we want it as open-time i.e. close-time - interval
 					token[1][0] = token[1][1].ConvertInvariant<long>() - interval * 60;
-					var candle = this.ParseCandle(token[1], marketSymbol, interval * 60, 2, 3, 4, 5, 0, TimestampType.UnixSeconds, 7, null, 6,8);
+					var candle = this.ParseCandle(token[1], marketSymbol, interval * 60, 2, 3, 4, 5, 0, TimestampType.UnixSeconds, 7, null, 6, 8);
 					await callbackAsync(candle);
 				}
 			}, connectCallback: async (_socket) =>
@@ -895,7 +895,7 @@ namespace ExchangeSharp
 					{
 						if (token.Count == 3 && token[1].ToString() == "openOrders")
 						{
-							foreach(JToken element in token[0])
+							foreach (JToken element in token[0])
 							{
 								if (element is JObject position)
 								{

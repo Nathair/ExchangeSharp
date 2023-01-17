@@ -19,12 +19,12 @@ using System.Threading.Tasks;
 
 namespace ExchangeSharp
 {
-    /// <summary>
-    /// This shows all the methods that can be overriden when implementation a new exchange, along
-    /// with all the fields that should be set in the constructor or static constructor if needed.
-    /// </summary>
-    public abstract partial class ExchangeAPI
-    {
+	/// <summary>
+	/// This shows all the methods that can be overriden when implementation a new exchange, along
+	/// with all the fields that should be set in the constructor or static constructor if needed.
+	/// </summary>
+	public abstract partial class ExchangeAPI
+	{
 		/*
 		protected virtual Task<IEnumerable<KeyValuePair<string, ExchangeTicker>>> OnGetTickersAsync();
         protected virtual Task<IEnumerable<KeyValuePair<string, ExchangeOrderBook>>> OnGetOrderBooksAsync(int maxCount = 100);
@@ -79,27 +79,27 @@ namespace ExchangeSharp
 		/// </summary>
 		protected Dictionary<string, string> ExchangeGlobalCurrencyReplacements = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>
-        /// Separator for exchange symbol. If not a hyphen, set in constructor. This should be one character and is a string for convenience of concatenation.
-        /// </summary>
-        public string MarketSymbolSeparator { get; protected set; } = "-";
+		/// <summary>
+		/// Separator for exchange symbol. If not a hyphen, set in constructor. This should be one character and is a string for convenience of concatenation.
+		/// </summary>
+		public string MarketSymbolSeparator { get; protected set; } = "-";
 
-        /// <summary>
-        /// Whether the symbol is reversed. Most exchanges do ETH-BTC, if your exchange does BTC-ETH, set to true in constructor.
-        /// </summary>
-        public bool MarketSymbolIsReversed { get; protected set; }
+		/// <summary>
+		/// Whether the symbol is reversed. Most exchanges do ETH-BTC, if your exchange does BTC-ETH, set to true in constructor.
+		/// </summary>
+		public bool MarketSymbolIsReversed { get; protected set; }
 
-        /// <summary>
-        /// Whether the symbol is uppercase. Most exchanges are true, but if your exchange is lowercase, set to false in constructor.
-        /// </summary>
-        public bool MarketSymbolIsUppercase { get; protected set; } = true;
+		/// <summary>
+		/// Whether the symbol is uppercase. Most exchanges are true, but if your exchange is lowercase, set to false in constructor.
+		/// </summary>
+		public bool MarketSymbolIsUppercase { get; protected set; } = true;
 
-        /// <summary>
-        /// The type of web socket order book supported
-        /// </summary>
-        public WebSocketOrderBookType WebSocketOrderBookType { get; protected set; } = WebSocketOrderBookType.None;
-    }
+		/// <summary>
+		/// The type of web socket order book supported
+		/// </summary>
+		public WebSocketOrderBookType WebSocketOrderBookType { get; protected set; } = WebSocketOrderBookType.None;
+	}
 
-    // implement this and change the field name and value to the name of your exchange
-    // public partial class ExchangeName { public const string MyNewExchangeName = "MyNewExchangeName"; }
+	// implement this and change the field name and value to the name of your exchange
+	// public partial class ExchangeName { public const string MyNewExchangeName = "MyNewExchangeName"; }
 }

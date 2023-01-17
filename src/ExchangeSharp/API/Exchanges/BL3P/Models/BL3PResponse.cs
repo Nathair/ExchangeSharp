@@ -26,10 +26,10 @@ namespace ExchangeSharp.BL3P
 		protected abstract BL3PResponsePayload Data { get; set; }
 
 		[JsonIgnore]
-		public virtual TSuccess Success => (TSuccess) Data;
+		public virtual TSuccess Success => (TSuccess)Data;
 
 		[JsonIgnore]
-		public virtual TFail Error => (TFail) Data;
+		public virtual TFail Error => (TFail)Data;
 
 		/// <summary>
 		/// Returns TSuccess or nothing

@@ -11,6 +11,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 */
 
 #nullable enable
+using ExchangeSharp.OKGroup;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +22,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using ExchangeSharp.OKGroup;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace ExchangeSharp
 {
@@ -92,26 +92,26 @@ namespace ExchangeSharp
 			void ParseMarketSymbolTokens(JToken allMarketSymbolTokens)
 			{
 				markets.AddRange(from marketSymbolToken in allMarketSymbolTokens
-					let isSpot = marketSymbolToken["instType"].Value<string>() == "SPOT"
-					let baseCurrency = isSpot
-						? marketSymbolToken["baseCcy"].Value<string>()
-						: marketSymbolToken["settleCcy"].Value<string>()
-					let quoteCurrency = isSpot
-						? marketSymbolToken["quoteCcy"].Value<string>()
-						: marketSymbolToken["ctValCcy"].Value<string>()
-					select new ExchangeMarket
-					{
-						MarketSymbol = marketSymbolToken["instId"].Value<string>(),
-						IsActive = marketSymbolToken["state"].Value<string>() == "live",
-						QuoteCurrency = quoteCurrency,
-						BaseCurrency = baseCurrency,
-						PriceStepSize = marketSymbolToken["tickSz"].ConvertInvariant<decimal>(),
-						MinPrice = marketSymbolToken["tickSz"]
-							.ConvertInvariant<
-								decimal>(), // assuming that this is also the min price since it isn't provided explicitly by the exchange
-						MinTradeSize = marketSymbolToken["minSz"].ConvertInvariant<decimal>(),
-						QuantityStepSize = marketSymbolToken["lotSz"].ConvertInvariant<decimal>()
-					});
+								 let isSpot = marketSymbolToken["instType"].Value<string>() == "SPOT"
+								 let baseCurrency = isSpot
+									 ? marketSymbolToken["baseCcy"].Value<string>()
+									 : marketSymbolToken["settleCcy"].Value<string>()
+								 let quoteCurrency = isSpot
+									 ? marketSymbolToken["quoteCcy"].Value<string>()
+									 : marketSymbolToken["ctValCcy"].Value<string>()
+								 select new ExchangeMarket
+								 {
+									 MarketSymbol = marketSymbolToken["instId"].Value<string>(),
+									 IsActive = marketSymbolToken["state"].Value<string>() == "live",
+									 QuoteCurrency = quoteCurrency,
+									 BaseCurrency = baseCurrency,
+									 PriceStepSize = marketSymbolToken["tickSz"].ConvertInvariant<decimal>(),
+									 MinPrice = marketSymbolToken["tickSz"]
+										 .ConvertInvariant<
+											 decimal>(), // assuming that this is also the min price since it isn't provided explicitly by the exchange
+									 MinTradeSize = marketSymbolToken["minSz"].ConvertInvariant<decimal>(),
+									 QuantityStepSize = marketSymbolToken["lotSz"].ConvertInvariant<decimal>()
+								 });
 			}
 		}
 
@@ -241,7 +241,7 @@ namespace ExchangeSharp
 			var token = await GetBalance();
 			return token[0]["details"]
 				.Select(x => new
-					{ Currency = x["ccy"].Value<string>(), AvailableBalance = x["availBal"].Value<decimal>() })
+				{ Currency = x["ccy"].Value<string>(), AvailableBalance = x["availBal"].Value<decimal>() })
 				.Where(x => !string.IsNullOrEmpty(x.Currency))
 				.ToDictionary(k => k.Currency, v => v.AvailableBalance);
 		}
@@ -465,12 +465,12 @@ namespace ExchangeSharp
 								Logger.Info("Websocket unable to connect: " + token["msg"]?.ToStringInvariant());
 								return;
 							case "subscribe" when token["arg"]["channel"] != null:
-							{
-								// subscription successful
-								pingTimer ??= new Timer(callback: async s => await _socket.SendMessageAsync("ping"),
-									null, 0, 15000);
-								return;
-							}
+								{
+									// subscription successful
+									pingTimer ??= new Timer(callback: async s => await _socket.SendMessageAsync("ping"),
+										null, 0, 15000);
+									return;
+								}
 							default:
 								return;
 						}
@@ -523,12 +523,12 @@ namespace ExchangeSharp
 								Logger.Info("Websocket unable to connect: " + token["msg"]?.ToStringInvariant());
 								return;
 							case "subscribe" when token["arg"]["channel"] != null:
-							{
-								// subscription successful
-								pingTimer ??= new Timer(callback: async s => await _socket.SendMessageAsync("ping"),
-									null, 0, 15000);
-								return;
-							}
+								{
+									// subscription successful
+									pingTimer ??= new Timer(callback: async s => await _socket.SendMessageAsync("ping"),
+										null, 0, 15000);
+									return;
+								}
 							default:
 								return;
 						}
@@ -604,7 +604,9 @@ namespace ExchangeSharp
 				var args = symbolsToSend
 					.Select(s => new
 					{
-						channel = channelFormat, instId = s, uly = GetUly(s),
+						channel = channelFormat,
+						instId = s,
+						uly = GetUly(s),
 						instType = GetInstrumentType(s).ToUpperInvariant()
 					})
 					.ToArray();

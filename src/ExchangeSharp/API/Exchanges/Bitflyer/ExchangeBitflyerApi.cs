@@ -129,7 +129,7 @@ namespace ExchangeSharp
 			{
 				foreach (var marketSymbol in marketSymbols)
 				{ // {product_code} can be obtained from the market list. It cannot be an alias.
-					// BTC/JPY (Spot): lightning_executions_BTC_JPY
+				  // BTC/JPY (Spot): lightning_executions_BTC_JPY
 					await client.socketIO.EmitAsync("subscribe", $"lightning_executions_{marketSymbol}");
 				}
 			};
@@ -150,8 +150,10 @@ namespace ExchangeSharp
 		}
 
 		public TimeSpan ConnectInterval
-		{ get => throw new NotSupportedException();
-			set => socketIO.Options.Reconnection = value > TimeSpan.Zero; }
+		{
+			get => throw new NotSupportedException();
+			set => socketIO.Options.Reconnection = value > TimeSpan.Zero;
+		}
 
 		public TimeSpan KeepAlive
 		{ get => throw new NotSupportedException(); set => throw new NotSupportedException(); }

@@ -1,3 +1,7 @@
+using ExchangeSharp.BL3P;
+using ExchangeSharp.Utility;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -5,10 +9,6 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using ExchangeSharp.BL3P;
-using ExchangeSharp.Utility;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace ExchangeSharp
@@ -282,7 +282,7 @@ namespace ExchangeSharp
 			var bl3pOrderBook = (await MakeJsonRequestAsync<BL3PReponseFullOrderBook>($"/{marketSymbol}/money/depth/full"))
 				.Except();
 
-			bl3pOrderBook.MarketSymbol??= marketSymbol;
+			bl3pOrderBook.MarketSymbol ??= marketSymbol;
 
 			return ConvertToExchangeOrderBook(maxCount, bl3pOrderBook);
 		}
