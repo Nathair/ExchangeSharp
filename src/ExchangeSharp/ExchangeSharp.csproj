@@ -24,6 +24,7 @@
     <RepositoryUrl>https://github.com/DigitalRuby/ExchangeSharp</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<SonarQubeExclude>true</SonarQubeExclude>
   </PropertyGroup>
 	
   <ItemGroup>
@@ -41,6 +42,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="NLog" Version="4.7.14" />
     <PackageReference Include="SocketIOClient" Version="3.0.6" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.12.0.78982">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
   </ItemGroup>
 
